@@ -31,5 +31,5 @@ This Python program demonstrates fundamental 3D graphics concepts, including rot
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/3d-shape-renderer.git
-   cd 3d-shape-renderer
+   git clone https://github.com/imad151/3DPygame
+   cd 3DPygame
