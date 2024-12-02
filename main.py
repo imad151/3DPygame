@@ -19,7 +19,7 @@ class ShapeCanvas:
         self.vertices, self.edges = self.GetRandomShape()
 
         # Size
-        self.scale = 300
+        self.scale = 500
 
         # Cam distance
         self.cam_distance = 5
@@ -83,20 +83,33 @@ class ShapeCanvas:
 
     def draw_shape(self):
         """
-        Draw the shape on the screen.
+        Draw the shape with shaded faces on the screen.
         """
         transformed_points = [self.rotate(v, self.angle_x, self.angle_y) for v in self.vertices]
         projected_points = [self.project(p) for p in transformed_points]
 
+        light_dir = np.array([0, 0, -1])
+
+        for simplex in ConvexHull(self.vertices).simplices:
+            face_vertices = [transformed_points[i] for i in simplex]
+            face_projected = [projected_points[i] for i in simplex]
+
+            v1 = np.array(face_vertices[1]) - np.array(face_vertices[0])
+            v2 = np.array(face_vertices[2]) - np.array(face_vertices[0])
+            normal = np.cross(v1, v2)
+            normal /= np.linalg.norm(normal)
+
+            intensity = max(0, np.dot(normal, light_dir))
+
+            color = (int(255 * intensity), int(255 * intensity), int(255 * intensity))
+
+            pygame.draw.polygon(self.screen, color, face_projected)
+
         for edge in self.edges:
             start, end = edge
-
-            # Check if the indices are valid
             if start >= len(projected_points) or end >= len(projected_points):
-                print(f"Invalid edge: {edge} (out of range)")
-                continue  # Skip invalid edges
-
-            pygame.draw.line(self.screen, self.WHITE, projected_points[start], projected_points[end], 2)
+                continue
+            pygame.draw.line(self.screen, self.WHITE, projected_points[start], projected_points[end], 1)
 
     def handle_mouse_input(self):
         """Update rotation angles based on mouse movement."""
