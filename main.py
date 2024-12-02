@@ -1,10 +1,11 @@
+import random
 import pygame
 import math
-
-
+import numpy as np
+from scipy.spatial import ConvexHull
 
 class ShapeCanvas:
-    def __init__(self, vertices, edges):
+    def __init__(self):
         self.screen_width = 800
         self.screen_height = 600
         self.screen = pygame.display.set_mode((self.screen_width, self.screen_height))
@@ -15,11 +16,10 @@ class ShapeCanvas:
         self.BLACK = (0, 0, 0)
 
         # Shape vertices and edges
-        self.vertices = vertices
-        self.edges = edges
+        self.vertices, self.edges = self.GetRandomShape()
 
         # Size
-        self.scale = 100
+        self.scale = 300
 
         # Cam distance
         self.cam_distance = 5
@@ -48,15 +48,6 @@ class ShapeCanvas:
     def rotate(self, point, angle_x, angle_y):
         """
         Rotate a 3D point around the X and Y axes.
-        Rotation matrix for x:
-        [[1, 0, 0],
-        [0, cos, -sin],
-        [0, sin, cos]]
-
-        For Y:
-        [[cos, 0, sin],
-        [0, 1, 0],
-        [-sin, 0, cos]]
         """
         x, y, z = point
 
@@ -72,19 +63,39 @@ class ShapeCanvas:
 
         return x, y, z
 
+    def GetRandomShape(self):
+        """
+        Generate a random 3D shape based on random points and compute its convex hull.
+        """
+        num_points = random.randint(10, 20)
+        points = np.random.rand(num_points, 3) * 2 - 1
+
+        hull = ConvexHull(points)
+
+        edges = []
+
+        for simplex in hull.simplices:
+            edges.append((simplex[0], simplex[1]))
+            edges.append((simplex[1], simplex[2]))
+            edges.append((simplex[2], simplex[0]))
+
+        return points, edges
+
     def draw_shape(self):
         """
         Draw the shape on the screen.
-        v' = Project(Rotate(v))
-        v' = P.Ry(Úx).Rx(Úy).v
-        Ú = theta
         """
-
         transformed_points = [self.rotate(v, self.angle_x, self.angle_y) for v in self.vertices]
         projected_points = [self.project(p) for p in transformed_points]
 
         for edge in self.edges:
             start, end = edge
+
+            # Check if the indices are valid
+            if start >= len(projected_points) or end >= len(projected_points):
+                print(f"Invalid edge: {edge} (out of range)")
+                continue  # Skip invalid edges
+
             pygame.draw.line(self.screen, self.WHITE, projected_points[start], projected_points[end], 2)
 
     def handle_mouse_input(self):
@@ -118,47 +129,5 @@ class ShapeCanvas:
 
 if __name__ == "__main__":
     pygame.init()
-
-    # cube
-    '''
-    vertices = [
-        [-1, -1, -1],
-        [1, -1, -1],
-        [1, 1, -1],
-        [-1, 1, -1],
-        [-1, -1, 1],
-        [1, -1, 1],
-        [1, 1, 1],
-        [-1, 1, 1]
-    ]
-    edges = [
-        (0, 1), (1, 2), (2, 3), (3, 0),
-        (4, 5), (5, 6), (6, 7), (7, 4),
-        (0, 4), (1, 5), (2, 6), (3, 7)
-    ]
-    '''
-
-    # diamond
-    vertices = [
-    [0, 1, 0],
-    [-1, 0, -1],
-    [1, 0, -1], 
-    [1, 0, 1],  
-    [-1, 0, 1], 
-    [0, -1, 0]
-    ]
-
-    edges = [
-    (0, 1), (0, 2), (0, 3), (0, 4),  
-    (1, 2), (2, 3), (3, 4), (4, 1),
-    (5, 1), (5, 2), (5, 3), (5, 4)   
-    ]
-
-    shape_canvas = ShapeCanvas(vertices, edges)
+    shape_canvas = ShapeCanvas()
     shape_canvas.game_loop()
-
-
-if __name__ == "__main__":
-    pygame.init()
-    cube_canvas = ShapeCanvas()
-    cube_canvas.game_loop()
